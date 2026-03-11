@@ -1,6 +1,6 @@
 # exa-cli
 
-CLI for [Exa AI](https://exa.ai) search via [GAP](https://github.com/anthropics/gap) (Gated Agent Proxy).
+CLI for [Exa AI](https://exa.ai) search using `EXA_API_KEY` from your shell environment.
 
 By [Mike Kelly](https://github.com/mikekelly).
 
@@ -12,26 +12,14 @@ npm install -g @realmikekelly/exa-cli
 
 ## Prerequisites
 
-1. **GAP installed and running** - See [GAP documentation](https://github.com/anthropics/gap)
-2. **Install the Exa plugin** - `mikekelly/exa-gap`
-3. **Set your Exa API key in GAP**
-4. **Create a GAP token for your agent**
+1. **Exa API key** - Get one at [exa.ai](https://exa.ai)
+2. **Set `EXA_API_KEY` in your shell environment**
 
 ## Configuration
 
-Set your GAP token in a `.env` file in your working directory:
-
-```
-GAP_TOKEN=your-token-here
-```
-
-Or as an environment variable:
-
 ```bash
-export GAP_TOKEN=your-token-here
+export EXA_API_KEY=your-exa-api-key
 ```
-
-The CLI checks `.env` first, then falls back to the environment variable.
 
 ## Usage
 

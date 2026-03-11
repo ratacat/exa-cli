@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { create as createAxiosGap, isAxiosError } from './utils/axiosGap.js';
+import { create as createAxiosExa, isAxiosError } from './utils/axiosExa.js';
 import { API_CONFIG } from './tools/config.js';
 import type {
   ExaSearchRequest,
@@ -14,14 +14,14 @@ import type {
 
 const program = new Command();
 
-// Create axios instance with GAP proxy
+// Create axios instance using EXA_API_KEY from the shell environment
 function getAxios() {
-  return createAxiosGap();
+  return createAxiosExa();
 }
 
 program
   .name('exa-cli')
-  .description('CLI for Exa AI search via GAP proxy')
+  .description('CLI for Exa AI search using EXA_API_KEY from the environment')
   .version('1.0.4');
 
 // Web Search

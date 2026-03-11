@@ -1,0 +1,1 @@
+{"version":3,"file":"axiosExa.d.ts","sourceRoot":"","sources":["../../src/utils/axiosExa.ts"],"names":[],"mappings":"AAAA,OAAc,EAAE,aAAa,EAAE,YAAY,EAAE,MAAM,OAAO,CAAC;AAc3D,MAAM,WAAW,qBAAqB;IACpC,SAAS,CAAC,EAAE,MAAM,CAAC;CACpB;AAED,wBAAgB,MAAM,CAAC,OAAO,CAAC,EAAE,qBAAqB,GAAG,aAAa,CAUrE;AAED,OAAO,EAAE,YAAY,EAAE,CAAC;;;;;AACxB,wBAAwC"}
