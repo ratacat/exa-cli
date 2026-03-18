@@ -56,6 +56,27 @@ exa-cli deep-search "climate change solutions" -q "renewable energy" "carbon cap
 Options:
 - `-q, --queries <queries...>` - Additional search queries
 
+### Deep Output
+
+Synthesized answers with grounding citations and optional structured output schemas.
+
+```bash
+exa-cli deep "what are the latest Claude model releases"
+exa-cli deep "compare top cloud providers" --show-sources
+exa-cli deep "top AI startups" --schema '{"type":"object","required":["startups"],"properties":{"startups":{"type":"array","items":{"type":"object","required":["name","focus"],"properties":{"name":{"type":"string"},"focus":{"type":"string"}}}}}}'
+exa-cli deep "explain transformer architecture" --reasoning
+exa-cli deep "summarize recent SpaceX launches" --raw
+```
+
+Options:
+- `-n, --num-results <number>` - Number of results (default: 5)
+- `-s, --system-prompt <prompt>` - Instructions to guide search planning and synthesis
+- `--schema <json>` - JSON output schema for structured results
+- `--schema-file <path>` - Path to JSON file containing output schema
+- `--reasoning` - Use deep-reasoning type (more thorough, higher latency)
+- `--show-sources` - Show grounding citations and confidence
+- `--raw` - Output raw JSON response
+
 ### URL Crawling
 
 ```bash
