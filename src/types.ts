@@ -1,34 +1,52 @@
 // Exa API Types
 export interface ExaSearchRequest {
   query: string;
-  type: 'auto' | 'fast' | 'deep' | 'deep-reasoning' | 'instant';
-  category?: string;
+  type: 'auto' | 'neural' | 'fast' | 'instant' | 'deep' | 'deep-reasoning';
+  category?: 'company' | 'research paper' | 'news' | 'tweet' | 'personal site' | 'financial report' | 'people';
+  userLocation?: string;
   includeDomains?: string[];
   excludeDomains?: string[];
   startPublishedDate?: string;
   endPublishedDate?: string;
+  startCrawlDate?: string;
+  endCrawlDate?: string;
+  includeText?: string[];
+  excludeText?: string[];
   numResults?: number;
+  moderation?: boolean;
   additionalQueries?: string[];
   systemPrompt?: string;
   outputSchema?: Record<string, unknown>;
   contents: {
     text?: {
       maxCharacters?: number;
-    } | boolean;
-    context?: {
-      maxCharacters?: number;
-    } | boolean;
-    summary?: {
-      query?: string;
+      includeHtmlTags?: boolean;
+      verbosity?: 'compact' | 'standard' | 'full';
+      includeSections?: string[];
+      excludeSections?: string[];
     } | boolean;
     highlights?: {
       maxCharacters?: number;
       query?: string;
     } | boolean;
-    livecrawl?: 'fallback' | 'preferred';
+    summary?: {
+      query?: string;
+      schema?: Record<string, unknown>;
+    } | boolean;
+    /** @deprecated Use maxAgeHours instead */
+    livecrawl?: 'never' | 'fallback' | 'preferred' | 'always';
+    livecrawlTimeout?: number;
     maxAgeHours?: number;
     subpages?: number;
-    subpageTarget?: string[];
+    subpageTarget?: string | string[];
+    extras?: {
+      links?: number;
+      imageLinks?: number;
+    };
+    /** @deprecated Use highlights or text instead */
+    context?: {
+      maxCharacters?: number;
+    } | boolean;
   };
 }
 
@@ -45,10 +63,17 @@ export interface ExaSearchResult {
   publishedDate: string;
   author: string;
   text: string;
+  highlights?: string[];
+  highlightScores?: number[];
   summary?: string;
   image?: string;
   favicon?: string;
   score?: number;
+  subpages?: ExaSearchResult[];
+  extras?: {
+    links?: string[];
+    imageLinks?: string[];
+  };
 }
 
 export interface ExaDeepGrounding {
@@ -59,8 +84,8 @@ export interface ExaDeepGrounding {
 
 export interface ExaSearchResponse {
   requestId: string;
-  autopromptString?: string;
-  resolvedSearchType: string;
+  searchType?: string;
+  /** @deprecated Use highlights or text from results instead */
   context?: string;
   results: ExaSearchResult[];
   output?: {
@@ -70,14 +95,6 @@ export interface ExaSearchResponse {
   costDollars?: {
     total: number;
   };
-}
-
-// Tool Types
-export interface SearchArgs {
-  query: string;
-  numResults?: number;
-  livecrawl?: 'fallback' | 'preferred';
-  type?: 'auto' | 'fast' | 'deep';
 }
 
 // Deep Research API Types

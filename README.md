@@ -28,13 +28,26 @@ export EXA_API_KEY=your-exa-api-key
 ```bash
 exa-cli search "your query"
 exa-cli search "anthropic claude" -n 10 -t fast
+exa-cli search "AI regulation" --category news --after 2025-01-01
+exa-cli search "react hooks" --include-domains github.com stackoverflow.com
+exa-cli search "latest Fed rate decision" --max-age 0
+exa-cli search "transformer architecture" --text -c 10000
 ```
 
 Options:
-- `-n, --num-results <number>` - Number of results (default: 8)
-- `-t, --type <type>` - Search type: auto, fast, instant (default: auto)
-- `-l, --livecrawl <mode>` - Livecrawl mode: fallback, preferred (default: fallback)
-- `-c, --context-max <chars>` - Max characters for context (default: 10000)
+- `-n, --num-results <number>` - Number of results, max 100 (default: 8)
+- `-t, --type <type>` - Search type: auto, neural, fast, instant (default: auto)
+- `-c, --max-chars <number>` - Max characters for highlights per result (default: 4000)
+- `--text` - Return full page text instead of highlights
+- `--category <category>` - Filter: company, research paper, news, tweet, personal site, financial report, people
+- `--include-domains <domains...>` - Only include results from these domains
+- `--exclude-domains <domains...>` - Exclude results from these domains
+- `--after <date>` - Only results published after this date (YYYY-MM-DD)
+- `--before <date>` - Only results published before this date (YYYY-MM-DD)
+- `--include-text <text>` - Results must contain this string (max 5 words)
+- `--exclude-text <text>` - Results must not contain this string (max 5 words)
+- `--max-age <hours>` - Max age of cached content in hours (0 = always livecrawl)
+- `--raw` - Output raw JSON response
 
 ### Code Search
 
@@ -60,12 +73,15 @@ exa-cli deep "summarize recent SpaceX launches" --raw
 ```
 
 Options:
-- `-n, --num-results <number>` - Number of results (default: 5)
+- `-n, --num-results <number>` - Number of results, max 100 (default: 5)
 - `-q, --queries <queries...>` - Additional search query variations for better coverage
 - `-s, --system-prompt <prompt>` - Instructions to guide search planning and synthesis
 - `--schema <json>` - JSON output schema for structured results
 - `--schema-file <path>` - Path to JSON file containing output schema
 - `--reasoning` - Use deep-reasoning type (more thorough, higher latency)
+- `--category <category>` - Filter: company, research paper, news, tweet, personal site, financial report, people
+- `--include-domains <domains...>` - Only include results from these domains
+- `--exclude-domains <domains...>` - Exclude results from these domains
 - `--show-sources` - Show grounding citations and confidence
 - `--raw` - Output raw JSON response
 

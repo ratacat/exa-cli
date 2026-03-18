@@ -9,8 +9,7 @@ import type {
   ExaCodeResponse,
   DeepResearchRequest,
   DeepResearchStartResponse,
-  DeepResearchCheckResponse,
-  ExaDeepGrounding
+  DeepResearchCheckResponse
 } from './types.js';
 
 const program = new Command();
@@ -29,25 +28,47 @@ program
 program
   .command('search <query>')
   .description('Search the web using Exa AI')
-  .option('-n, --num-results <number>', 'Number of results', '8')
-  .option('-t, --type <type>', 'Search type: auto, fast, instant', 'auto')
-  .option('-l, --livecrawl <mode>', 'Livecrawl mode: fallback, preferred', 'fallback')
-  .option('-c, --context-max <chars>', 'Max characters for context', '10000')
+  .option('-n, --num-results <number>', 'Number of results (max 100)', '8')
+  .option('-t, --type <type>', 'Search type: auto, neural, fast, instant', 'auto')
+  .option('-c, --max-chars <number>', 'Max characters for highlights per result', '4000')
+  .option('--text', 'Return full page text instead of highlights')
+  .option('--category <category>', 'Filter by category: company, research paper, news, tweet, personal site, financial report, people')
+  .option('--include-domains <domains...>', 'Only include results from these domains')
+  .option('--exclude-domains <domains...>', 'Exclude results from these domains')
+  .option('--after <date>', 'Only results published after this date (YYYY-MM-DD)')
+  .option('--before <date>', 'Only results published before this date (YYYY-MM-DD)')
+  .option('--include-text <text>', 'Results must contain this string (max 5 words)')
+  .option('--exclude-text <text>', 'Results must not contain this string (max 5 words)')
+  .option('--max-age <hours>', 'Max age of cached content in hours (0 = always livecrawl)')
+  .option('--raw', 'Output raw JSON response')
   .action(async (query: string, options) => {
     try {
       const axios = getAxios();
+
+      const contents: ExaSearchRequest['contents'] = {};
+      if (options.text) {
+        contents.text = { maxCharacters: parseInt(options.maxChars) };
+      } else {
+        contents.highlights = { maxCharacters: parseInt(options.maxChars) };
+      }
+      if (options.maxAge !== undefined) {
+        contents.maxAgeHours = parseInt(options.maxAge);
+      }
+
       const searchRequest: ExaSearchRequest = {
         query,
-        type: options.type as 'auto' | 'fast' | 'deep',
+        type: options.type,
         numResults: parseInt(options.numResults),
-        contents: {
-          text: true,
-          context: {
-            maxCharacters: parseInt(options.contextMax)
-          },
-          livecrawl: options.livecrawl as 'fallback' | 'preferred'
-        }
+        contents
       };
+
+      if (options.category) searchRequest.category = options.category;
+      if (options.includeDomains) searchRequest.includeDomains = options.includeDomains;
+      if (options.excludeDomains) searchRequest.excludeDomains = options.excludeDomains;
+      if (options.after) searchRequest.startPublishedDate = options.after;
+      if (options.before) searchRequest.endPublishedDate = options.before;
+      if (options.includeText) searchRequest.includeText = [options.includeText];
+      if (options.excludeText) searchRequest.excludeText = [options.excludeText];
 
       const response = await axios.post<ExaSearchResponse>(
         `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SEARCH}`,
@@ -61,10 +82,32 @@ program
         }
       );
 
-      if (response.data?.context) {
-        console.log(response.data.context);
-      } else {
+      if (options.raw) {
+        console.log(JSON.stringify(response.data, null, 2));
+        return;
+      }
+
+      const data = response.data;
+      if (!data.results?.length) {
         console.log('No results found.');
+        return;
+      }
+
+      for (const result of data.results) {
+        console.log(`\n## ${result.title}`);
+        console.log(result.url);
+        if (result.publishedDate) console.log(`Published: ${result.publishedDate}`);
+        if (options.text && result.text) {
+          console.log(`\n${result.text}`);
+        } else if (result.highlights?.length) {
+          console.log(`\n${result.highlights.join('\n\n')}`);
+        } else if (result.text) {
+          console.log(`\n${result.text}`);
+        }
+      }
+
+      if (data.costDollars) {
+        console.error(`\nCost: $${data.costDollars.total.toFixed(4)}`);
       }
     } catch (error) {
       handleError(error, 'Search');
@@ -110,12 +153,15 @@ program
 program
   .command('deep <query>')
   .description('Exa Deep: agentic search with synthesized output, grounding, and structured schemas')
-  .option('-n, --num-results <number>', 'Number of results', '5')
+  .option('-n, --num-results <number>', 'Number of results (max 100)', '5')
   .option('-q, --queries <queries...>', 'Additional search query variations for better coverage')
   .option('-s, --system-prompt <prompt>', 'Instructions to guide search planning and synthesis')
   .option('--schema <json>', 'JSON output schema for structured results')
   .option('--schema-file <path>', 'Path to JSON file containing output schema')
   .option('--reasoning', 'Use deep-reasoning type (more thorough, higher latency)')
+  .option('--category <category>', 'Filter by category: company, research paper, news, tweet, personal site, financial report, people')
+  .option('--include-domains <domains...>', 'Only include results from these domains')
+  .option('--exclude-domains <domains...>', 'Exclude results from these domains')
   .option('--show-sources', 'Show grounding citations and confidence')
   .option('--raw', 'Output raw JSON response')
   .action(async (query: string, options) => {
@@ -137,6 +183,10 @@ program
       if (options.systemPrompt) {
         searchRequest.systemPrompt = options.systemPrompt;
       }
+
+      if (options.category) searchRequest.category = options.category;
+      if (options.includeDomains) searchRequest.includeDomains = options.includeDomains;
+      if (options.excludeDomains) searchRequest.excludeDomains = options.excludeDomains;
 
       // Handle output schema from --schema or --schema-file
       if (options.schema) {
