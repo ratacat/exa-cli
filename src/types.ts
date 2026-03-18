@@ -1,7 +1,7 @@
 // Exa API Types
 export interface ExaSearchRequest {
   query: string;
-  type: 'auto' | 'fast' | 'deep';
+  type: 'auto' | 'fast' | 'deep' | 'deep-reasoning' | 'instant';
   category?: string;
   includeDomains?: string[];
   excludeDomains?: string[];
@@ -9,6 +9,8 @@ export interface ExaSearchRequest {
   endPublishedDate?: string;
   numResults?: number;
   additionalQueries?: string[];
+  systemPrompt?: string;
+  outputSchema?: Record<string, unknown>;
   contents: {
     text?: {
       maxCharacters?: number;
@@ -19,7 +21,12 @@ export interface ExaSearchRequest {
     summary?: {
       query?: string;
     } | boolean;
+    highlights?: {
+      maxCharacters?: number;
+      query?: string;
+    } | boolean;
     livecrawl?: 'fallback' | 'preferred';
+    maxAgeHours?: number;
     subpages?: number;
     subpageTarget?: string[];
   };
@@ -44,12 +51,25 @@ export interface ExaSearchResult {
   score?: number;
 }
 
+export interface ExaDeepGrounding {
+  field: string;
+  citations: Array<{ url: string; title: string }>;
+  confidence: 'low' | 'medium' | 'high';
+}
+
 export interface ExaSearchResponse {
   requestId: string;
   autopromptString?: string;
   resolvedSearchType: string;
   context?: string;
   results: ExaSearchResult[];
+  output?: {
+    content: string | Record<string, unknown>;
+    grounding?: ExaDeepGrounding[];
+  };
+  costDollars?: {
+    total: number;
+  };
 }
 
 // Tool Types

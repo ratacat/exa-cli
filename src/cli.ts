@@ -9,7 +9,8 @@ import type {
   ExaCodeResponse,
   DeepResearchRequest,
   DeepResearchStartResponse,
-  DeepResearchCheckResponse
+  DeepResearchCheckResponse,
+  ExaDeepGrounding
 } from './types.js';
 
 const program = new Command();
@@ -144,6 +145,107 @@ program
       }
     } catch (error) {
       handleError(error, 'Deep search');
+    }
+  });
+
+// Deep Output Search
+program
+  .command('deep <query>')
+  .description('Deep search with synthesized output, grounding, and optional structured schemas')
+  .option('-n, --num-results <number>', 'Number of results', '5')
+  .option('-s, --system-prompt <prompt>', 'Instructions to guide search planning and synthesis')
+  .option('--schema <json>', 'JSON output schema for structured results')
+  .option('--schema-file <path>', 'Path to JSON file containing output schema')
+  .option('--reasoning', 'Use deep-reasoning type (more thorough, higher latency)')
+  .option('--show-sources', 'Show grounding citations and confidence')
+  .option('--raw', 'Output raw JSON response')
+  .action(async (query: string, options) => {
+    try {
+      const axios = getAxios();
+      const searchRequest: ExaSearchRequest = {
+        query,
+        type: options.reasoning ? 'deep-reasoning' : 'deep',
+        numResults: parseInt(options.numResults),
+        contents: {
+          text: true
+        }
+      };
+
+      if (options.systemPrompt) {
+        searchRequest.systemPrompt = options.systemPrompt;
+      }
+
+      // Handle output schema from --schema or --schema-file
+      if (options.schema) {
+        try {
+          searchRequest.outputSchema = JSON.parse(options.schema);
+        } catch {
+          console.error('Error: --schema must be valid JSON');
+          process.exit(1);
+        }
+      } else if (options.schemaFile) {
+        try {
+          const fs = await import('fs');
+          const schemaContent = fs.readFileSync(options.schemaFile, 'utf-8');
+          searchRequest.outputSchema = JSON.parse(schemaContent);
+        } catch (err) {
+          console.error(`Error reading schema file: ${err instanceof Error ? err.message : String(err)}`);
+          process.exit(1);
+        }
+      }
+
+      const response = await axios.post<ExaSearchResponse>(
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SEARCH}`,
+        searchRequest,
+        {
+          headers: {
+            'accept': 'application/json',
+            'content-type': 'application/json'
+          },
+          timeout: 120000
+        }
+      );
+
+      if (options.raw) {
+        console.log(JSON.stringify(response.data, null, 2));
+        return;
+      }
+
+      const data = response.data;
+
+      // Print synthesized output
+      if (data.output?.content) {
+        if (typeof data.output.content === 'string') {
+          console.log(data.output.content);
+        } else {
+          console.log(JSON.stringify(data.output.content, null, 2));
+        }
+      } else if (data.context) {
+        console.log(data.context);
+      } else {
+        console.log('No results found.');
+        return;
+      }
+
+      // Print grounding if requested
+      if (options.showSources && data.output?.grounding?.length) {
+        console.log('\n--- Sources ---');
+        for (const g of data.output.grounding) {
+          const confidence = g.confidence ? ` [${g.confidence}]` : '';
+          console.log(`\n${g.field}${confidence}`);
+          for (const c of g.citations) {
+            console.log(`  ${c.title}`);
+            console.log(`  ${c.url}`);
+          }
+        }
+      }
+
+      // Print cost if available
+      if (data.costDollars) {
+        console.error(`\nCost: $${data.costDollars.total.toFixed(4)}`);
+      }
+    } catch (error) {
+      handleError(error, 'Deep output search');
     }
   });
 
