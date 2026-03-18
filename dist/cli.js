@@ -16,7 +16,7 @@ program
     .command('search <query>')
     .description('Search the web using Exa AI')
     .option('-n, --num-results <number>', 'Number of results', '8')
-    .option('-t, --type <type>', 'Search type: auto, fast, deep', 'auto')
+    .option('-t, --type <type>', 'Search type: auto, fast, instant', 'auto')
     .option('-l, --livecrawl <mode>', 'Livecrawl mode: fallback, preferred', 'fallback')
     .option('-c, --context-max <chars>', 'Max characters for context', '10000')
     .action(async (query, options) => {
@@ -82,47 +82,12 @@ program
         handleError(error, 'Code search');
     }
 });
-// Deep Search
-program
-    .command('deep-search <objective>')
-    .description('Deep web search with query expansion')
-    .option('-q, --queries <queries...>', 'Additional search queries')
-    .action(async (objective, options) => {
-    try {
-        const axios = getAxios();
-        const searchRequest = {
-            query: objective,
-            type: 'deep',
-            contents: {
-                context: true
-            }
-        };
-        if (options.queries?.length) {
-            searchRequest.additionalQueries = options.queries;
-        }
-        const response = await axios.post(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SEARCH}`, searchRequest, {
-            headers: {
-                'accept': 'application/json',
-                'content-type': 'application/json'
-            },
-            timeout: 25000
-        });
-        if (response.data?.context) {
-            console.log(response.data.context);
-        }
-        else {
-            console.log('No results found.');
-        }
-    }
-    catch (error) {
-        handleError(error, 'Deep search');
-    }
-});
-// Deep Output Search
+// Exa Deep - agentic search with synthesized output, grounding, and structured schemas
 program
     .command('deep <query>')
-    .description('Deep search with synthesized output, grounding, and optional structured schemas')
+    .description('Exa Deep: agentic search with synthesized output, grounding, and structured schemas')
     .option('-n, --num-results <number>', 'Number of results', '5')
+    .option('-q, --queries <queries...>', 'Additional search query variations for better coverage')
     .option('-s, --system-prompt <prompt>', 'Instructions to guide search planning and synthesis')
     .option('--schema <json>', 'JSON output schema for structured results')
     .option('--schema-file <path>', 'Path to JSON file containing output schema')
@@ -140,6 +105,9 @@ program
                 text: true
             }
         };
+        if (options.queries?.length) {
+            searchRequest.additionalQueries = options.queries;
+        }
         if (options.systemPrompt) {
             searchRequest.systemPrompt = options.systemPrompt;
         }
@@ -210,7 +178,7 @@ program
         }
     }
     catch (error) {
-        handleError(error, 'Deep output search');
+        handleError(error, 'Deep search');
     }
 });
 // Crawl URL
